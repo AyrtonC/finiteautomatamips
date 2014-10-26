@@ -1,5 +1,5 @@
 #Simulador de Autômatos Finitos, por Ayrton Cavalieri de Almeida
-#Este programa tem o intuito de testar autômatos finitos, determinísticos ou não-determinísticos, para validação
+#Este programa tem o intuito de utilizar autômatos finitos, determinísticos ou não-determinísticos, para validação
 #de cadeia de caracteres. Para isso, ele utiliza um grafo, onde fica expresso o autômato que realizará
 #o teste, e uma cadeia de caracteres contendo a sentença a ser testada.
 #Entradas: Teclado
