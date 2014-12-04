@@ -1,9 +1,11 @@
 #Simulador de Autômatos Finitos, por Ayrton Cavalieri de Almeida
-#Este programa tem o intuito de utilizar autômatos finitos, determinísticos ou não-determinísticos, para validação
-#de cadeia de caracteres. Para isso, ele utiliza um grafo, onde fica expresso o autômato que realizará
-#o teste, e uma cadeia de caracteres contendo a sentença a ser testada.
+#Este programa tem o intuito de utilizar autômatos finitos, determinísticos ou não-determinísticos, para expressar
+#uma gramática regular e testar uma cadeia de caracteres. 
+#Para isso, ele utiliza um grafo, onde fica expresso o autômato que realizará
+#o teste, e uma cadeia de caracteres (string) contendo a sentença a ser testada.
 #Entradas: Teclado
 #Saídas: Monitor
+#Número de instruções (com pseudo-instruções já convertidas): 365
 	.data
 vet:	.word 0
 nln:	.asciiz "\n"
@@ -19,7 +21,7 @@ ins4:	.asciiz	"Informe o estado destino:\n"
 ins5:	.asciiz "Deseja inserir outra transição?\n(s - SIM n - NÃO)\n"
 ins6:	.asciiz	"Deseja inserir transições?\n(s - SIM n - NÃO)\n"
 asktst:	.asciiz "Digite a cadeia para teste, ou \"exit\" para sair:\n"
-gratam:	.asciiz	"Digite a quantidade de estados:\n"
+grasiz:	.asciiz	"Digite a quantidade de estados:\n"
 ext:	.asciiz "exit"
 chok:	.asciiz "Cadeia reconhecida!\n"
 chinv:	.asciiz "Cadeia inválida!\n"
@@ -28,15 +30,18 @@ chain:	.byte 0:201
 	.text
 	.globl main
 	
-	jal main
-	li $v0, 10
+	#jal main
+	la $a0, main
+	la $ra, Next
+	jr $a0
+Next:	li $v0, 10
 	syscall
 	
 main:
 	subu $sp, $sp, 8
 	sw $ra, 0($sp)
-	
-	la $a0, gratam	
+
+	la $a0, grasiz	
 	jal prints	#Imprime a mensagem perguntando o tamanho do grafo
 	li $v0, 5
 	syscall		#Lê um inteiro com o tamanho do grafo
@@ -46,9 +51,9 @@ main:
 	jal inigra #Inicializa o grafo. $v0 recebe a quantidade de estados e retorna o endereço do grafo inicializado
 	sw $v0, vet
 	
-	lw $v0, vet	#Inserir estados, $v0 recebe o endereço do vetor de ponteiros
+	lw $v0, vet	#Inserir transições, $v0 recebe o endereço do vetor de ponteiros
 	lw $a0, 4($sp)	#$a0 recebe a quantidade de estados
-	jal insest
+	jal instrn
 Repete:
 	la $a0, asktst	
 	jal prints	#Imprime a mensagem pedindo para escrever uma cadeia de caracteres
@@ -64,7 +69,7 @@ Repete:
 	lw $a0, vet
 	lw $a1, 4($sp)	
 	la $a2, chain
-	jal fndini	#Inicia o teste da cadeia, $a0 recebe o endereço do vetor de ponteiros
+	jal fndini	#Inicia o teste da cadeia, $a0 recebe o endereço do vetor de ponteiros (grafo)
 			#$a1 recebe a quantidade de estados, $a2 recebe o endereço do vetor de char
 			#$v0 recebe 1 caso o teste tenha dado VERDADEIRO e 0 caso FALSO
 	bne $v0, $zero, Chok
@@ -107,7 +112,7 @@ Extfun:
 tstcad: #Função para testar cadeia.
 	#$a0 recebe o endereço do grafo, $a1 recebe número do estado inicial(ou atual da chamada),
 	#$a2 recebe o endereço do vetor com a cadeia pra teste. 
-	#Resposta V ou F retornando em $v0
+	#Resposta V(1) ou F(0) retornando em $v0
 	subu $sp, $sp, 20
 	sw $ra, 0($sp)
 	
@@ -188,7 +193,7 @@ fndini: #Função para encontrar o estado inicial e começar o teste.
 	sw $ra, 0($sp)
 	
 	addu $t0, $a0, $zero	#Copia o endereço do grafo	
-	addu $t2, $a1, $zero	#Copia a quanidade de estados
+	addu $t2, $a1, $zero	#Copia a quantidade de estados
 	addu $t1, $zero, $zero	#Inicializa o contador
 Lopfnd: beq $t1, $t2, Extfnd
 	lw $s0, 0($a0)	#Carrega o endereço apontado por $a0
@@ -208,7 +213,7 @@ Extfnd:
 	addu $sp, $sp, 4
 	jr $ra
 
-insest: #Escreve os estados do grafo. $v0 recebe endereço do vetor, $a0 recebe a quantidade de estados
+instrn: #Escreve os estados do grafo. $v0 recebe endereço do vetor, $a0 recebe a quantidade de estados
 	subu $sp, $sp, 36	#Cria espaço no stack para o $ra e para os parâmetros
 	sw $ra, 0($sp)	#Salva o $ra no início do espaço reservado
 	
@@ -227,19 +232,17 @@ Loopins:beq $s2, $s3, Fimins	#Desvia ao chegar ao fim do vetor de estados
 	syscall
 	addu $a0, $s2, $zero	#Copia o número do estado sendo lido
 	addu $a0, $a0, 1	#Soma 1 para visualização natural
-	li $v0, 1
-	syscall
+	li $v0, 36
+	syscall		#Imprime inteiro sem sinal
 	la $a0, nln
-	li $v0, 4
-	syscall		#Imprime a nova linha
+	jal prints	#Imprime a nova linha
 	
 	lw $s7, 32($sp)	#Carrega flag avisando se o estado inicial já foi setado
 	sw $zero, 28($sp)	#Zera o parâmetro inicial
 	bne $s7, $zero, Inicset
 	
 	la $a0, ins1
-	li $v0, 4
-	syscall		#Imprime mensagem perguntando se é inicial
+	jal prints		#Imprime mensagem perguntando se é inicial
 	li $v0, 5	#Pergunta se é "inicial"
 	syscall
 	sw $v0, 28($sp)	#Salva o parâmetro "inicial" no stack
@@ -247,8 +250,7 @@ Loopins:beq $s2, $s3, Fimins	#Desvia ao chegar ao fim do vetor de estados
 
 Inicset: #Ponto de desvio se o inicial já foi setado
 	la $a0, ins2
-	li $v0, 4
-	syscall		#Imprime mensagem perguntando se é final
+	jal prints		#Imprime mensagem perguntando se é final
 	li $v0, 5	#Pergunta se é "final"
 	syscall
 	sw $v0, 24($sp)	#Salva o parâmetro "final" no stack
@@ -286,12 +288,10 @@ Agn:	beq $t0, $t7, Ext	#Loop para inserir transições no mesmo estado
 	jal scans	#Chama scans, parâmetro já está salvo na memória
 	
 	la $a0, nln
-	li $v0, 4
-	syscall		#Imprime uma nova linha
+	jal prints		#Imprime uma nova linha
 	
 	la $a0, ins4
-	li $v0, 4
-	syscall		#Imprime mensagem perguntando qual a transição de destino
+	jal prints		#Imprime mensagem perguntando qual a transição de destino
 	li $v0, 5	#Informa o destino
 	syscall
 	subu $v0, $v0, 1
@@ -304,8 +304,7 @@ Agn:	beq $t0, $t7, Ext	#Loop para inserir transições no mesmo estado
 	sw $v0, 0($s0)	#Salva o enderço no vetor
 	
 	la $a0, ins5
-	li $v0, 4
-	syscall		#Imprime mensagem perguntando se deseja inserir mais transições
+	jal prints		#Imprime mensagem perguntando se deseja inserir mais transições
 	
 	lb $t7, chn	#Carrega o caracter 'n'
 	la $a0, 16($sp)	#Com os parâmetros já salvos na lista, reuso espaço do char de transição para resposta do usuário
@@ -314,12 +313,11 @@ Agn:	beq $t0, $t7, Ext	#Loop para inserir transições no mesmo estado
 	lb $t0, 16($sp)	#Carrega a resposta do usuário
 	
 	la $a0, nln
-	li $v0, 4
-	syscall		#Imprime uma nova linha
+	jal prints		#Imprime uma nova linha
 	j Agn
 Ext:
 
-	sb $zero, 16($sp)
+	sb $zero, 16($sp)	#Zero o espaço onde está armazenado o caracter de transição que virou lixo.
 
 	lw $s2, 12($sp)	#Carrego o contador
 	addu $s2, $s2, 1	#Somo 1 ao contador
