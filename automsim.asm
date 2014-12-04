@@ -30,11 +30,8 @@ chain:	.byte 0:201
 	.text
 	.globl main
 	
-	#jal main
-	la $a0, main
-	la $ra, Next
-	jr $a0
-Next:	li $v0, 10
+	jal main
+	li $v0, 10
 	syscall
 	
 main:
