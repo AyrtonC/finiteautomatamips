@@ -5,9 +5,8 @@
 #o teste, e uma cadeia de caracteres (string) contendo a sentença a ser testada.
 #Entradas: Teclado
 #Saídas: Monitor
-#Número de instruções (com pseudo-instruções já convertidas): 365
+#Número de instruções (com pseudo-instruções já convertidas): 356
 	.data
-vet:	.word 0
 nln:	.asciiz "\n"
 nulc:	.asciiz "\0"
 chs:	.asciiz "s"
@@ -25,7 +24,6 @@ grasiz:	.asciiz	"Digite a quantidade de estados:\n"
 ext:	.asciiz "exit"
 chok:	.asciiz "Cadeia reconhecida!\n"
 chinv:	.asciiz "Cadeia inválida!\n"
-chain:	.byte 0:201
 
 	.text
 	.globl main
@@ -35,7 +33,7 @@ chain:	.byte 0:201
 	syscall
 	
 main:
-	subu $sp, $sp, 8
+	subiu $sp, $sp, 216
 	sw $ra, 0($sp)
 
 	la $a0, grasiz	
@@ -46,26 +44,26 @@ main:
 	sw $v0, 4($sp)	#Armazena a quantidade de estados localmente
 	
 	jal inigra #Inicializa o grafo. $v0 recebe a quantidade de estados e retorna o endereço do grafo inicializado
-	sw $v0, vet
+	sw $v0, 8($sp)	#Salva o endereço do vetor na pilha
 	
-	lw $v0, vet	#Inserir transições, $v0 recebe o endereço do vetor de ponteiros
+	lw $v0, 8($sp)	#Inserir transições, $v0 recebe o endereço do vetor de ponteiros
 	lw $a0, 4($sp)	#$a0 recebe a quantidade de estados
 	jal instrn
 Repete:
 	la $a0, asktst	
 	jal prints	#Imprime a mensagem pedindo para escrever uma cadeia de caracteres
-	la $a0, chain
+	la $a0, 12($sp)
 	li $a1, 201
 	jal scans	#Lê a cadeia de caracteres com tamanho até 200
 	
-	la $v0, chain
-	jal extpro	#Checa se foi digitada a cadeia de saída, a resposta retorna em $v0
+	la $v0, 12($sp)
+	jal extpro	#Checa se foi digitada a cadeia com comando de saída, a resposta retorna em $v0
 	
 	bne $v0, $zero, Fimpro	#Sai do programa caso o teste tenha dado VERDADEIRO
 	
-	lw $a0, vet
+	lw $a0, 8($sp)
 	lw $a1, 4($sp)	
-	la $a2, chain
+	la $a2, 12($sp)
 	jal fndini	#Inicia o teste da cadeia, $a0 recebe o endereço do vetor de ponteiros (grafo)
 			#$a1 recebe a quantidade de estados, $a2 recebe o endereço do vetor de char
 			#$v0 recebe 1 caso o teste tenha dado VERDADEIRO e 0 caso FALSO
@@ -82,7 +80,7 @@ Rpt:
 	
 Fimpro:
 	lw $ra, 0($sp)
-	addu $sp, $sp, 8
+	addiu $sp, $sp, 216
 	jr $ra
 
 extpro: #Função para testar se a palavra de saída foi digitada. Recebe o endereço do vetor em $v0
@@ -397,23 +395,23 @@ malloc: #$v0 = multiplicador(endereço de memória retorna aqui), $a0 = tamanho 
 	
 	jr $ra #Retorna pra quem chamou
 
-scans:	#$a0 recebe endereço do vetor de char, $a1 recebe tamanho do vetor de char
-	addu $t1, $a0, $zero	#Copia o endereço inicial do vetor no stack
-	addu $t0, $zero, $zero	#Inicializa o contador
-	li $v0, 8	#Lê string
-	syscall		#Chamada de sistema
-	lbu $t4, nln	#Carrega caracter de nova-linha
-	lbu $t5, nulc	#Carrega caracter NULL
-Loopscn:beq $t0, $a1, Finscn	#Desvia se chegar ao fim do vetor
-	lbu $t3, 0($t1)	#Carrega 1 caracter do vetor
-	beq $t3, $t4, Finscn	#Desvia se encontrar caracter de nova-linha
-	addiu $t0, $t0, 1	#Adiciona 1 ao contador
-	addiu $t1, $t1, 1	#Aponta pra próxima letra do vetor
-	j Loopscn
-	
-Finscn:	sb $t5, 0($t1)	#Armazena o caracter NULL no fim do vetor
-	jr $ra		#Retorna pra main
+scans:	#Função scans recebe como parâmetros o endereço do buffer em $a0, e o tamanho do buffer em $a1
+	addu $t0, $a0, $zero	#Copia o endereço inicial do buffer
+	addu $t1, $a0, $a1	#Copia o endereço inicial mais o deslocamento
+	li $t3, '\n'		#Copia o valor de '\n' para $t3
+	li $v0, 8
+	syscall			#Syscall para ler string
 
+Loop:	beq $t0, $t1, Finfun	#Desvia se chegar ao fim do vetor
+	lb $t2, 0($t0)		#Carrega um caracter do vetor de string
+	beq $t2, $t3, Subst	#Desvia se encontrar o '\n'
+	addiu $t0, $t0, 1	#Soma 1 ao endereço
+	j Loop
+Subst:	
+	sb $zero, 0($t0)	#Salva o '\0' no final da string, se necessário
+Finfun:
+	jr $ra
+	
 prints: #$a0 recebe endereço do vetor de char
 	li $v0, 4
 	syscall
