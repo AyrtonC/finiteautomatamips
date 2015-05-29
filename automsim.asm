@@ -13,17 +13,18 @@ chs:	.asciiz "s"
 chn:	.asciiz "n"
 eps:	.asciiz "?"
 ins0:	.asciiz "Informando parâmetros do estado: "
-ins1:	.asciiz "É inicial?\n(0 - Não 1 - Sim)\n"
-ins2:	.asciiz	"É final?\n(0 - Não 1 - Sim)\n"
+ins1:	.asciiz "É inicial?\n(0 - NÃO 1 - SIM)\n"
+ins2:	.asciiz	"É final?\n(0 - NÃO 1 - SIM)\n"
 ins3:	.asciiz "Informe o caracter de transição:(? = Épsilon)\n"
 ins4:	.asciiz	"Informe o estado destino:\n"
 ins5:	.asciiz "Deseja inserir outra transição?\n(s - SIM n - NÃO)\n"
 ins6:	.asciiz	"Deseja inserir transições?\n(s - SIM n - NÃO)\n"
-asktst:	.asciiz "Digite a cadeia para teste, ou \"exit\" para sair:\n"
+asktst:	.asciiz "Digite a cadeia para teste, ou \"sair\" para sair:\n"
 grasiz:	.asciiz	"Digite a quantidade de estados:\n"
-ext:	.asciiz "exit"
+ext:	.asciiz "sair"
 chok:	.asciiz "Cadeia reconhecida!\n"
 chinv:	.asciiz "Cadeia inválida!\n"
+szero:	.asciiz "Digite um tamanho maior que zero!\n"
 
 	.text
 	.globl main
@@ -33,15 +34,20 @@ chinv:	.asciiz "Cadeia inválida!\n"
 	syscall
 	
 main:
-	subiu $sp, $sp, 216
+	addiu $sp, $sp, -216
 	sw $ra, 0($sp)
-
+Blzero:
 	la $a0, grasiz	
 	jal prints	#Imprime a mensagem perguntando o tamanho do grafo
 	li $v0, 5
 	syscall		#Lê um inteiro com o tamanho do grafo
 	
-	sw $v0, 4($sp)	#Armazena a quantidade de estados localmente
+	bgt $v0, $zero, Abzero	#Checa se o número digitado é positivo
+	la $a0, szero
+	jal prints	#Caso não seja, imprime mensagem informando e pede outro número
+	j Blzero
+	
+Abzero: sw $v0, 4($sp)	#Armazena a quantidade de estados localmente
 	
 	jal inigra #Inicializa o grafo. $v0 recebe a quantidade de estados e retorna o endereço do grafo inicializado
 	sw $v0, 8($sp)	#Salva o endereço do vetor na pilha
@@ -87,7 +93,7 @@ extpro: #Função para testar se a palavra de saída foi digitada. Recebe o ende
 	#Retorna 1 em $v0 caso o teste seja verdadeiro
 	li $t7, 4	#Copio o tamanho da palavra
 	addu $t6, $zero, $zero	#Inicializo o contador
-	la $s0, ext	#Pego o endereço da palavra "exit"
+	la $s0, ext	#Pego o endereço da palavra "sair"
 Lopext: beq $t6, $t7, OK
 	lb $t0, 0($s0)	#Leio do vetor ext
 	lb $t1, 0($v0)	#Leio do vetor fornecido pelo usuário
@@ -108,7 +114,7 @@ tstcad: #Função para testar cadeia.
 	#$a0 recebe o endereço do grafo, $a1 recebe número do estado inicial(ou atual da chamada),
 	#$a2 recebe o endereço do vetor com a cadeia pra teste. 
 	#Resposta V(1) ou F(0) retornando em $v0
-	subu $sp, $sp, 20
+	addiu $sp, $sp, -20
 	sw $ra, 0($sp)
 	
 	sw $a0, 4($sp)	#Salva o endereço inicial do grafo
@@ -178,13 +184,13 @@ Nxtst2:
 	j Loptst2
 	
 Exttst: lw $ra, 0($sp)
-	addu $sp, $sp, 20
+	addiu $sp, $sp, 20
 	jr $ra
 
 fndini: #Função para encontrar o estado inicial e começar o teste.
 	#$a0 recebe o endereço do grafo, $a1 recebe a quantidade de estados, $a2 recebe endereço do 
 #vetor com a cadeia pra teste
-	subu $sp, $sp,4
+	addiu $sp, $sp, -4
 	sw $ra, 0($sp)
 	
 	addu $t0, $a0, $zero	#Copia o endereço do grafo	
@@ -205,11 +211,11 @@ Jumpfnd:
 	j Lopfnd
 Extfnd:
 	lw $ra, 0($sp)
-	addu $sp, $sp, 4
+	addiu $sp, $sp, 4
 	jr $ra
 
 instrn: #Escreve os estados do grafo. $v0 recebe endereço do vetor, $a0 recebe a quantidade de estados
-	subu $sp, $sp, 36	#Cria espaço no stack para o $ra e para os parâmetros
+	addiu $sp, $sp, -36	#Cria espaço no stack para o $ra e para os parâmetros
 	sw $ra, 0($sp)	#Salva o $ra no início do espaço reservado
 	
 	sw $v0, 4($sp)	#Salva o endereço do vetor no stack
@@ -315,11 +321,11 @@ Ext:
 	sb $zero, 16($sp)	#Zero o espaço onde está armazenado o caracter de transição que virou lixo.
 
 	lw $s2, 12($sp)	#Carrego o contador
-	addu $s2, $s2, 1	#Somo 1 ao contador
+	addiu $s2, $s2, 1	#Somo 1 ao contador
 	sw $s2, 12($sp)	#Atualiza o contador na memória
 	
 	lw $s0, 4($sp)	#Lê a posição atual do vetor
-	addu $s0, $s0, 4	#Aponta pra próxima posição
+	addiu $s0, $s0, 4	#Aponta pra próxima posição
 	sw $s0, 4($sp)	#Atualiza posição atual na memória
 	
 	lw $s3, 8($sp)	#Carrega o total de estados para comparar
@@ -328,12 +334,12 @@ Ext:
 	
 Fimins:
 	lw $ra, 0($sp)	#Recupera o $ra
-	addu $sp, $sp, 36	#Retorna o espaço
+	addiu $sp, $sp, 36	#Retorna o espaço
 	jr $ra
 
 inslis: #Cria um nó e liga à lista. $v0 recebe o "*prox" e retorna o endereço do novo nó, 
 #$a0 recebe o endereço com as variáveis locais pertencentes a função que chamou
-	subu $sp, $sp, 12
+	addiu $sp, $sp, -12
 	sw $ra, 0($sp)
 	
 	sw $v0, 4($sp)	#Salva o "*prox"
@@ -362,11 +368,11 @@ inslis: #Cria um nó e liga à lista. $v0 recebe o "*prox" e retorna o endereço
 	sw $s0, 12($v0)	#Salva o "inicial" no nó da lista
 	
 	lw $ra, 0($sp)
-	addu $sp, $sp, 12
+	addiu $sp, $sp, 12
 	jr $ra
 
 inigra: #Inicializa o grafo. $v0 recebe a quantidade de estados e retorna o endereço do grafo inicializado
-	subu $sp, $sp, 8
+	addiu $sp, $sp, -8
 	sw $ra, 0($sp)	#Salva endereço do "caller"
 	
 	sw $v0, 4($sp)	#Salva quantidade de estados
@@ -383,7 +389,7 @@ Loopini:beq $t2, $t0, Fimini	#Desvia se percorreu todos os estados
 	
 Fimini:
 	lw $ra, 0($sp)	#Recupera o endereço do "caller"
-	addu $sp, $sp, 8
+	addiu $sp, $sp, 8
 	jr $ra		#Retorna para o "caller"	
 
 malloc: #$v0 = multiplicador(endereço de memória retorna aqui), $a0 = tamanho do tipo
