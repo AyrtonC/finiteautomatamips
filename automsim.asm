@@ -5,7 +5,7 @@
 #o teste, e uma cadeia de caracteres (string) contendo a sentença a ser testada.
 #Entradas: Teclado
 #Saídas: Monitor
-#Número de instruções (com pseudo-instruções já convertidas): 356
+#Número de instruções (com pseudo-instruções já convertidas): 334
 	.data
 nln:	.asciiz "\n"
 nulc:	.asciiz "\0"
@@ -112,16 +112,14 @@ Extfun:
 
 tstcad: #Função para testar cadeia.
 	#$a0 recebe o endereço do grafo, $a1 recebe número do estado inicial(ou atual da chamada),
-	#$a2 recebe o endereço do vetor com a cadeia pra teste. 
+	#$a2 recebe o endereço do vetor com a cadeia (ou sub-cadeia) pra teste. 
 	#Resposta V(1) ou F(0) retornando em $v0
 	addiu $sp, $sp, -20
 	sw $ra, 0($sp)
 	
 	sw $a0, 4($sp)	#Salva o endereço inicial do grafo
 	
-	li $t0, 4	#Carrega o "size of"
-	multu $a1, $t0
-	mflo $t0	#Multiplica o índice pelo "size of" para descobrir a posição do vetor que deve ser lida
+	sll $t0, $a1, 2	#Multiplica o índice por 4 (size of) pra calcular a posição do vetor que deve ser lida
 	addu $t0, $a0, $t0	#Desloca o endereço
 	sw $t0, 8($sp)	#Salva na memória
 	
@@ -133,7 +131,7 @@ tstcad: #Função para testar cadeia.
 	lw $t7, 8($t1)	#Carrega a flag de final
 	sw $t7, 16($sp)	#Armazena a flag
 	
-	bne $t0, $zero, Notnul	#Desvia se não estiver no fim do vetor, ou seja, se o caracter não é 0
+	bne $t0, $zero, Notnul	#Desvia se não estiver no fim do vetor, ou seja, se o caracter não é \0
 	
 Loptst: beq $t1, $zero, Noeps	#Loop para testar se acha transição épsilon, desvia se chegar ao fim da lista
 	lb $s0, eps	#Carrega o caracter épsilon pra teste
